@@ -7,12 +7,22 @@ from message_filters import Subscriber, ApproximateTimeSynchronizer
 from rclpy.parameter import Parameter #to use sim time
 from geometry_msgs.msg import PointStamped
 
+from tf2_ros.buffer import Buffer #for tf2 transform to base_link frame
+from tf2_ros import TransformException
+from tf2_ros.transform_listener import TransformListener
+import tf2_geometry_msgs
+
+from hw01_sim.arm_client import ArmClient
+
 import cv2
 import numpy as np
 from cv_bridge import CvBridge #bridges ros2 Image data to numpy array
 #filters library that combines messages
 
-# 2 lines - converting time to nanoseconds
+
+import time
+
+#converting time to nanoseconds
 def stamp_to_ns(stamp):
     return stamp.sec * 1_000_000_000 + stamp.nanosec
 
@@ -23,14 +33,40 @@ def main():
     bridge = CvBridge() #converter ros2 to cv for image pixel data
 
     camera_data = None
-    # 2 lines - create publisher
+    #create publisher
     printed = False
     target_pub = node.create_publisher(PointStamped, '/hw01/target_camera', 10)     #publisher for the marker position in camera coordinates
+    
+    tf_buffer = Buffer() #creates a tf2 object to store transforms
+    target_base_pub = node.create_publisher(PointStamped, '/hw01/target_base', 10) #publisher as required for marker relative to base
+    tf_listener = TransformListener(tf_buffer, node)
 
+    arm = ArmClient(node)
+    motion_future = None #check
+
+    last_pair_stamps = None
+    last_fresh_wall_time = None
+
+    def report(future):
+        nonlocal motion_future
+        try:
+            result = future.result()
+            if result.success:
+                node.get_logger().info(f'Motion succeeded: {result.message}')
+            else:
+                node.get_logger().warning(f'Motion failed: {result.message}')
+                motion_future = None
+        except Exception as e:
+            node.get_logger().warning(f'Motion failed: {e}')
+            motion_future = None
+            return
+        return
+        
+        
 
     def on_calib(msg):
         nonlocal camera_data
-        # 13 lines - validating camera
+        #validating camera
         if (not np.all(np.isfinite(msg.k))
             or msg.k[0] <= 0 or msg.k[4] <= 0
             or not msg.header.frame_id):
@@ -48,10 +84,11 @@ def main():
         camera_data = msg
     
     def on_images(rgb, depth):
-        # 1 line - getting global printer
-        nonlocal printed
+    
+        #getting global printer
+        nonlocal printed, motion_future, last_pair_stamps, last_fresh_wall_time
 
-        # 6 lines - calculating time for sync and rejecting difference of over 0.05 seconds
+        #calculating time for sync and rejecting difference of over 0.05 seconds
         rgb_time = stamp_to_ns(rgb.header.stamp)
         depth_time = stamp_to_ns(depth.header.stamp)
         delta_ns = abs(rgb_time - depth_time)
@@ -59,7 +96,30 @@ def main():
             node.get_logger().warning('Rejected: timestamp difference > 0.05s')
             return
 
-        # 15 lines - safety checks - camera calib, images dim and depth format
+        now_ns = node.get_clock().now().nanoseconds #checking if the images are stale (older than 0.5 seconds)
+        oldest_stamp_ns = min(rgb_time, depth_time)
+        if now_ns - oldest_stamp_ns > 500_000_000:
+            node.get_logger().warning('Skipping goal: camera observation is stale')
+            return
+        
+        pair_stamps = (rgb_time, depth_time)
+
+        if pair_stamps == last_pair_stamps:
+            return
+
+        #check whether fresh camera data was missing for 2 wall-clock seconds
+        current_wall_time = time.monotonic()
+
+        camera_gap = (last_fresh_wall_time is not None and current_wall_time - last_fresh_wall_time >= 2.0)
+
+        last_pair_stamps = pair_stamps
+        last_fresh_wall_time = current_wall_time
+
+        if camera_gap:
+            node.get_logger().warning('No fresh camera data for 2 seconds - skipping this observation')
+            return
+
+        #safety checks - camera calib, images dim and depth format
         if camera_data is None: return
         if (rgb.width != depth.width
             or rgb.height != depth.height
@@ -77,7 +137,7 @@ def main():
             node.get_logger().warning(f'Wrong depth encoding: {depth.encoding}')
             return
         
-        # 6 lines - added try and except
+        #added try and except
         try:
             image = bridge.imgmsg_to_cv2(rgb, "rgb8") #expected encoding
             depth_data = bridge.imgmsg_to_cv2(depth)
@@ -86,23 +146,23 @@ def main():
             return
 
         #finds red
-        # 4 lines - using relative values instead of fixed values (to find darker reds)
+        #using relative values instead of fixed values (to find darker reds)
         r = image[:, :, 0].astype(np.int16)
         g = image[:, :, 1].astype(np.int16)
         b = image[:, :, 2].astype(np.int16)
         red = ((r > 150) & (r > 3 * g) & (r > 3 * b))
         
-        # 1 lines - converting boolean to uint8 for OpenCV
+        #converting boolean to uint8 for OpenCV
         red = red.astype(np.uint8) * 255
 
-        # 1 lines - detecting groups of red pixels
+        #detecting groups of red pixels
         # count - num of groups
         # labels - matrix that replaces 255 in red with the num of the group
         # stats - measurements for each connected component
         # centers - average position of all pixels in the group
         count, labels, stats, centers = cv2.connectedComponentsWithStats(red, connectivity=8)
 
-        # 5 lines - keeping large red groups only and returning if there are non
+        #keeping large red groups only and returning if there are non
         regions = []
         for i in range(1, count): #0 is the background
             area = stats[i, cv2.CC_STAT_AREA]
@@ -110,24 +170,24 @@ def main():
                 regions.append((area, i))
         if len(regions) == 0: return
 
-        # 6 lines - sort regions by area size and use the largest
+        #sort regions by area size and use the largest
         regions.sort(reverse=True)
         largest_group_id = regions[0][1]
 
-        # 2 lines - approximate the center of the red region
+        #approximate the center of the red region
         center_x = int(round(centers[largest_group_id][0]))
         center_y = int(round(centers[largest_group_id][1]))
 
-        # 3 lines - single out the chosen group and retrieve valid depths
+        #single out the chosen group and retrieve valid depths
         chosen_group_mask = (labels == largest_group_id)
         depths = depth_data[chosen_group_mask]
         depths = depths[np.isfinite(depths) & (depths > 0) & (depths <= 10.0)]
                 
-        # 2 lines - for valid depths calculate median else return
+        #for valid depths calculate median else return
         if len(depths) < 5: return
         redDepth = float(np.median(depths))
 
-        # 7 lines - reconstruct 3D position using camera calibration
+        #reconstruct 3D position using camera calibration
         fx = camera_data.k[0]
         fy = camera_data.k[4]
         cx = camera_data.k[2]
@@ -136,7 +196,7 @@ def main():
         y = (center_y - cy) * redDepth / fy
         z = redDepth
 
-        # 6 lines - publish marker position in camera_optical_frame
+        #publish marker position in camera_optical_frame
         point = PointStamped()
         point.header = rgb.header
         point.point.x = float(x)
@@ -144,7 +204,35 @@ def main():
         point.point.z = float(z)
         target_pub.publish(point)
 
-        # 7 lines - print the first successful detection
+        #transorms into base frame
+        try:
+            point_base = tf_buffer.transform(point, 'base_link')
+        except TransformException as e:
+            node.get_logger().warning(f'TF2 failed: {e}')
+            return
+
+        point_base.header.stamp = point.header.stamp
+        target_base_pub.publish(point_base)
+
+        if motion_future is None and arm.ready():
+            #check again that the observation is still fresh before moving
+            now_ns = node.get_clock().now().nanoseconds
+            age_ns = now_ns - oldest_stamp_ns
+            if age_ns > 500_000_000:
+                node.get_logger().warning('Skipping motion: camera observation became stale')
+                return
+
+            #check wall-clock freshness
+            if time.monotonic() - last_fresh_wall_time >= 2.0:
+                node.get_logger().warning('No fresh camera data for 2 seconds')
+                return
+            
+            #adding offset of 0.08
+            point_base.point.z += 0.08
+            motion_future = arm.move_to_point(point_base)
+            motion_future.add_done_callback(report)
+
+        #print the first successful detection
         if not printed:
             node.get_logger().info(
                 f'Marker found at pixel ({center_x}, {center_y}), '
@@ -163,10 +251,12 @@ def main():
 
     try:
         rclpy.spin(node)
-    # 2 lines - added except
+    #added except
     except KeyboardInterrupt:
         node.get_logger().info('Shutting down marker detector')
     finally:
+        if motion_future is not None and not motion_future.done():
+            arm.cancel()
         node.destroy_node()
         rclpy.shutdown()
 
