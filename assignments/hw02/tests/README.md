@@ -40,6 +40,8 @@ ros2 run hw02_sim check_navigation --layout mixed --timeout 300
 ```
 
 Use the same layout name as the launch command. Repeat for `wide` and `blocked`.
+`--timeout 300` allows 300 wall-clock seconds, including planning and execution;
+the two-second stopping requirement below uses simulated time.
 It reads actual physics pose, velocity and latched contact streams; it never
 commands movement. A solvable run must arrive within 0.10 m, stop for two simulated
 seconds, and avoid wall/pillar contact. The blocked run must publish

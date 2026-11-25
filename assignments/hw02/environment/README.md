@@ -1,6 +1,7 @@
 # HW2 installation and simulation guide
 
-**Draft. See [verification results](VERIFICATION.md) before distributing.**
+See the [verification record](VERIFICATION.md) for tested configurations and
+known limitations.
 
 Use Ubuntu 24.04 LTS, ROS 2 Jazzy and Gazebo Harmonic. HW2 uses local models and
 Gazebo's standard differential-drive plugin; it needs no manufacturer packages,
@@ -8,6 +9,11 @@ MoveIt, Nav2, downloaded models, camera, or SLAM. The headless physics simulatio
 does not need camera/OpenGL rendering. GUI Gazebo and RViz still require graphics.
 
 ## Prepare Ubuntu and ROS
+
+If you completed the HW1 setup on this machine, Ubuntu preparation and ROS Jazzy
+repository setup are probably already complete; still run the HW2 dependency
+installation below, then build and source the HW2 environment. The full setup
+steps are retained here for students starting from scratch.
 
 Native Ubuntu 24.04 is the primary platform. Windows/macOS users can use an Ubuntu
 VM with guest tools and working 3D graphics for GUI use. Suggested starting resources
@@ -44,6 +50,10 @@ If HW1 already works, reuse the ROS installation and install the explicit HW2
 packages below. You do not need to rebuild HW1.
 
 ## Install dependencies
+
+Run this step even if you completed HW1: apt keeps packages already installed at
+the current version, upgrades them if needed, and installs missing dependencies.
+In particular, HW2 adds SciPy and Matplotlib to the HW1 setup.
 
 ```bash
 sudo apt update
@@ -113,6 +123,9 @@ files or student planner are needed.
 source /opt/ros/jazzy/setup.bash
 source assignments/hw02/environment/install/setup.bash
 ```
+
+All remaining commands in this guide assume the repository root as the working
+directory unless stated otherwise.
 
 You do not need to source HW1. Do not run HW1 and HW2 in the same ROS domain and
 Gazebo partition: they share `/clock` and conventional frame names. On a shared
@@ -262,17 +275,15 @@ is still required in your own code.
 
 Automated headless runs sometimes required launch's SIGTERM escalation to stop
 the Gazebo wrapper. Wait for shutdown to finish before restarting; do not launch
-a second world in the same partition while the old one remains alive. Interactive
-shutdown is still a clean-install release check.
+a second world in the same partition while the old one remains alive. See the
+[verification record](VERIFICATION.md) for the observed shutdown behavior.
 
 ## PDF tools for instructors
 
-Students do not need LaTeX to run the assignment:
+From the repository root, generate the handout and setup appendix at ignored
+`build/hw02/hw02.pdf`. Students do not need these PDF tools to run HW2:
 
 ```bash
 sudo apt install pandoc texlive-xetex texlive-fonts-recommended fonts-dejavu-core
 python3 tools/build_hw02_pdf.py
 ```
-
-Run from the repository root. The output is ignored `build/hw02/hw02.pdf`, containing
-the assignment followed by this guide as an appendix.

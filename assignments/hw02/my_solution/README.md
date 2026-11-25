@@ -1,7 +1,7 @@
 # Your HW2 implementation
 
 This directory contains only two setup examples. Complete the
-[installation guide](../environment/README.md) before creating your own planner package.
+[installation guide](../environment/README.md) before implementing your planner.
 
 ## Run the examples
 
@@ -54,24 +54,6 @@ ros2 run hw02_sim go_to --x 1.5 --y 3.0
 
 Use clear destinations for manual tests. Restart the simulation before assignment
 demonstrations to restore the initial robot pose and clear latched contacts.
-
-## Create your own package
-
-From this directory, create a Python package with `ros2 pkg create --build-type
-ament_python YOUR_PACKAGE`. Choose your own modules, node structure and executable
-entry point. Declare `hw02_sim` and every other ROS/Python dependency you use.
-Keep the two examples unchanged.
-
-After sourcing the shared environment, build your package from the repository root:
-
-```bash
-colcon --log-base assignments/hw02/my_solution/log build \
-  --symlink-install --base-paths assignments/hw02/my_solution \
-  --build-base assignments/hw02/my_solution/build \
-  --install-base assignments/hw02/my_solution/install
-source assignments/hw02/my_solution/install/setup.bash
-ros2 run YOUR_PACKAGE YOUR_EXECUTABLE
-```
 
 See [instructions.md](../instructions.md) for planning, visualization and report
 requirements. Commit source, report and required figures, not caches/build products.

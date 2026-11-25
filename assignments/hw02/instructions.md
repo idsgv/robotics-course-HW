@@ -4,7 +4,10 @@ title: "HW2: Configuration Space, PRM and A*"
 
 # HW2: Configuration Space, PRM and A*
 
-**Draft: release checks are still pending.**
+The PDF handout is generated automatically from the Markdown assignment
+instructions and installation guide in the
+[course repository](https://github.com/lifshitg/robotics-course-HW), and reproduces
+their content.
 
 ## Goal
 
@@ -157,11 +160,9 @@ Submit your ROS package and `report.md` under `my_solution/`. Include:
 - Planning results for seeds **0, 1, and 2** in each solvable layout: sampling and
   neighbor settings, retries, planning time, nodes/edges, path length, and execution outcome.
 - A bounded no-path result for `blocked` and discussion of sampling limitations.
-- One short recorded demonstration per layout, with simulation and public-check results.
 
 Reports/figures are submitted source material, not environment build output.
-Keep large recordings outside Git and include accessible links. Teaching staff
-will announce the deadline and grading weights before release.
+Teaching staff will announce the deadline and grading weights separately.
 
 Follow the [repository submission process](../../README.md#submitting-an-assignment).
 Use one `hw02` branch and one PR per student/group. Title it

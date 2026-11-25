@@ -1,6 +1,8 @@
 # HW2 verification record
 
-**Draft. A fresh operating-system installation and GUI checks remain release gates.**
+The shared simulation and both student setup examples pass the checks recorded
+below. Tested configurations and known limitations are documented separately;
+see [verification limits and follow-up checks](#verification-limits-and-follow-up-checks).
 
 ## Tested platform
 
@@ -86,15 +88,43 @@ host and required forced termination by launch. Cyclone DDS cleaned up the ROS
 components successfully. Automated noninteractive Gazebo wrappers sometimes
 needed SIGTERM escalation; two wrapper exits left Gazebo child processes that
 required an explicit SIGINT. All validation processes have been stopped. The
-setup guide documents the shutdown limitation; normal
-interactive shutdown/restart remains a release check.
+setup guide documents the shutdown limitation; normal interactive shutdown/restart
+has not yet been verified on a clean installation.
 
 Generated logs and figures are local, ignored artifacts under
 `build/hw02/validation/`; they contain instructor reference output. Initial wide
 seed 0 has a separate arrival record; subsequent runs have individual logs and
 `runtime.json`.
 
-## Remaining release gates
+## Documentation recheck: 2026-11-18
+
+Rechecked on Ubuntu 24.04.5 LTS, x86-64, Python 3.12.3, ROS Jazzy and Gazebo
+Sim 8.15.0, using the existing HW2 build. This was not a clean-install test and
+did not rerun the reference planner's navigation matrix above.
+
+- All nine public geometry tests and twelve isolated ROS helper tests pass.
+- The documented launch arguments and defaults match `--show-args`.
+- Readiness, `read_map.py` and `move_demo.py` pass in fresh headless worlds for
+  `wide`, `mixed` and `blocked`. Each map is 320 × 240 at 0.025 m resolution;
+  each movement example reaches `(1.5,3)` and returns to `(1,3)` without contact.
+  These short setup movements do not test a route through the pillars or the
+  blocked-layout planner behavior.
+- The instructor also reports successfully testing the simulation and both
+  student setup examples (`read_map.py` and `move_demo.py`).
+- Local documentation links resolve and the Bash command blocks pass syntax
+  checks. The full setup steps remain available, with a note explaining which
+  preparation HW1 students have probably already completed.
+- Automated SIGINT shutdown emitted motion-helper cleanup warnings. Interactive
+  shutdown/restart still needs separate testing.
+- The PDF was regenerated with Pandoc 3.1.3 and XeLaTeX (TeX Live 2023), using
+  tools extracted under `/tmp` without a system-wide installation. The assignment
+  and setup appendix include the updated deliverables and HW1 reuse note; rendered
+  pages were visually checked.
+
+Runtime logs and the per-layout result summary are ignored local artifacts under
+`build/hw02/doc-review/`.
+
+## Verification limits and follow-up checks
 
 - Start from fresh Ubuntu 24.04 and install **only** the documented dependencies,
   build, run talker/listener, readiness, both student examples and full reference
@@ -103,8 +133,9 @@ seed 0 has a separate arrival record; subsequent runs have individual logs and
 - Test Gazebo GUI and RViz interactively, including late subscription to student
   configuration-space/roadmap/path outputs. Headless physics is tested; GUI,
   graphics drivers, Ubuntu VMs, ARM machines, and native Windows/macOS are untested.
-- Review the recorded runtime matrix and recheck it on the clean installation
-  before changing assignment status from draft.
+- Review the recorded runtime matrix and recheck it on the clean installation.
+- Verify normal interactive shutdown/restart on that installation; automated
+  shutdown behavior above does not establish that it works cleanly.
 - Announce deadlines and grading weights; confirm the instructor solution has a
   private backup and is absent from tracked/staged files before publication.
 
