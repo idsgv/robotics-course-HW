@@ -13,10 +13,7 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='student',
-    maintainer_email='student@todo.todo',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    description='PRM and A* motion planning for a mobile robot using ROS 2 and Gazebo.',
     extras_require={
         'test': [
             'pytest',

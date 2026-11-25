@@ -3,9 +3,7 @@
 <package format="3">
   <name>hw02_planner</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="student@todo.todo">student</maintainer>
-  <license>TODO: License declaration</license>
+  <description>PRM and A* motion planning for HW02.</description>
 
   <depend>rclpy</depend>
   <depend>nav_msgs</depend>
