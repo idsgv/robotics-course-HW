@@ -35,7 +35,6 @@ def create_edges(points, R, cspace, mapInfo):
                 if is_edge_free(*points[i], *points[j],cspace, mapInfo):
                     graph[i][j] = distance
                     graph[j][i] = distance
-
     return graph
 
 
