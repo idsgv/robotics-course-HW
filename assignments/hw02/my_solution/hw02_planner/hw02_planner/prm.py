@@ -39,8 +39,7 @@ def create_edges(points, R, cspace, mapInfo):
     return graph
 
 
-def build_prm(start, goal, cspace, mapInfo,
-              N=500, R=1.0, seed=0):
+def build_prm(start, goal, cspace, mapInfo, N, R, seed):
 
     if not isFree(*start, cspace, mapInfo): raise ValueError("Start is not free")
     if not isFree(*goal, cspace, mapInfo): raise ValueError("Goal is not free")

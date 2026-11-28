@@ -8,6 +8,9 @@ import numpy as np
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 from scipy.ndimage import binary_dilation #for occupancy inflation of 0.3 meter radius
 
+from .prm import build_prm
+
+
 #Ido needs to go through this later on again
 def inflate(occupied, resolution, radius=0.30):
 
@@ -38,6 +41,13 @@ class PlannerNode(Node):
         self.robot_pose = None
         self.ready = False
         self.map_received = False
+
+        # PRM
+        self.N = 500
+        self.R = 1.0
+        self.seed = 0
+        self.points = None
+        self.graph = None
 
         qos = QoSProfile(
             depth=1,
@@ -116,15 +126,27 @@ class PlannerNode(Node):
 
     def check_readiness(self):
         if not self.ready and all(
-            msg is not None for msg in (
-                self.map,
-                self.start,
-                self.goal,
-                self.robot_pose
-            )
-        ):
+            msg is not None for msg in (self.map, self.start, self.goal, self.robot_pose, self.configSpace)):
             self.ready = True
             self.get_logger().info('PASS: planner ready')
+            self.generate_prm()
+
+
+    def generate_prm(self):
+        start = (self.start.pose.position.x, self.start.pose.position.y)
+        goal = (self.goal.pose.position.x, self.goal.pose.position.y)
+
+        self.get_logger().info('Generating PRM...')
+        try:
+            self.points, self.graph = build_prm(
+                start, goal, self.configSpace, self.map.info, self.N, self.R, self.seed)
+
+        except ValueError as error:
+            self.get_logger().error(str(error))
+            return
+
+        self.get_logger().info('PASS: PRM generated')
+
 
 
 def main(args=None):
