@@ -25,7 +25,7 @@ def isFree (x, y, cspace, mapInfo):
 
     return cspace[row, col] == 0
 
-#UNFINISHED
+
 def is_edge_free(x1, y1, x2, y2, cspace, mapInfo):
 
     # Check both endpoints
@@ -33,8 +33,8 @@ def is_edge_free(x1, y1, x2, y2, cspace, mapInfo):
     if not isFree(x2, y2, cspace, mapInfo): return False
 
     # Convert meters to continuous grid coordinates
-    gx1, gy1 = world_to_grid(x1, y1, mapInfo)
-    gx2, gy2= world_to_grid(x2, y2, mapInfo)
+    gy1, gx1 = world_to_grid(x1, y1, mapInfo)
+    gy2, gx2= world_to_grid(x2, y2, mapInfo)
 
     # Find all columns touched by the edge
     col_min = max(0, math.floor(min(gx1, gx2) - 1e-9))
