@@ -25,9 +25,44 @@ def isFree (x, y, cspace, mapInfo):
 #UNFINISHED
 def is_edge_free(x1, y1, x2, y2, cspace, mapInfo):
 
-    #start and end should be free
-    if not is_free(x1, y1, cspace, mapInfo) or not is_free(x2, y2, cspace, mapInfo):
-        return False
+    # Check both endpoints
+    if not isFree(x1, y1, cspace, mapInfo): return False
+    if not isFree(x2, y2, cspace, mapInfo): return False
 
-    
+    # Convert meters to continuous grid coordinates
+    gx1, gy1= world_to_grid(x1, y1, mapInfo)
+    gx2, gy2= world_to_grid(x2, y2, mapInfo)
+
+    # Find all columns touched by the edge
+    col_min = max(0, math.floor(min(gx1, gx2) - 1e-9))
+    col_max = min(mapInfo.width - 1,math.floor(max(gx1, gx2) + 1e-9))
+
+    for col in range(col_min, col_max + 1):
+        # Find where the edge enters and exits the column
+        if (gx2 - gx1) == 0:
+            t_min = 0.0
+            t_max = 1.0
+        else:
+            t1 = (col - 1e-9 - gx1) / (gx2 - gx1)
+            t2 = (col + 1 + 1e-9 - gx1) / (gx2 - gx1)
+
+            t_min = max(0.0, min(t1, t2))
+            t_max = min(1.0, max(t1, t2))
+
+        if t_min > t_max:
+            continue
+
+        # Calculate the corresponding y coordinates
+        ya = gy1 + t_min * (gy2 - gy1)
+        yb = gy1 + t_max * (gy2 - gy1)
+
+        # Find all rows touched inside this column
+        row_min = max(0, math.floor(min(ya, yb) - 1e-9))
+        row_max = min(mapInfo.height - 1,math.floor(max(ya, yb) + 1e-9))
+
+        # Check every touched cell
+        for row in range(row_min, row_max + 1):
+            if cspace[row, col] != 0: return False
+
+    return True
     

@@ -37,7 +37,6 @@ class PlannerNode(Node):
         self.goal = None
         self.robot_pose = None
         self.ready = False
-        self.declare_parameter('use_sim_time', True)
         self.map_received = False
 
         qos = QoSProfile(
