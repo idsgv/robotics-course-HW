@@ -1,12 +1,12 @@
 import math
 
-def world_to_grid(x, y, map_info):
-    origin_x = map_info.origin.position.x
-    origin_y = map_info.origin.position.y
-    resolution = map_info.resolution
+def world_to_grid(x, y, mapInfo):
+    origin_x = mapInfo.origin.position.x
+    origin_y = mapInfo.origin.position.y
+    resolution = mapInfo.resolution
 
-    col = math.floor((x - origin_x) / resolution)
-    row = math.floor((y - origin_y) / resolution)
+    col = (x - origin_x) / resolution
+    row = (y - origin_y) / resolution
 
     return row, col
 
@@ -16,6 +16,9 @@ def isFree (x, y, cspace, mapInfo):
         return False
     
     row, col = world_to_grid(x, y, mapInfo)
+
+    col = math.floor(col)
+    row = math.floor(row)
 
     if not (0 <= row < mapInfo.height and 0 <= col < mapInfo.width):
         return False
@@ -30,7 +33,7 @@ def is_edge_free(x1, y1, x2, y2, cspace, mapInfo):
     if not isFree(x2, y2, cspace, mapInfo): return False
 
     # Convert meters to continuous grid coordinates
-    gx1, gy1= world_to_grid(x1, y1, mapInfo)
+    gx1, gy1 = world_to_grid(x1, y1, mapInfo)
     gx2, gy2= world_to_grid(x2, y2, mapInfo)
 
     # Find all columns touched by the edge
@@ -65,4 +68,3 @@ def is_edge_free(x1, y1, x2, y2, cspace, mapInfo):
             if cspace[row, col] != 0: return False
 
     return True
-    
